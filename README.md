@@ -14,4 +14,4 @@ IDE: Visual Studio 2017
 ## Concepts covered in each video
 | Video | Concepts | Files |
 | ----- | -------- | ----- |
-|Practical Parallelism in C++: Introduction | Threads, Concurrency, Parallelism | <a href=https://github.com/CoffeeBeforeArch/practical_parallelism_in_cpp/blob/master/intro/intro/call_from.cpp>call_from.cpp</a> |
+|<a href=https://youtu.be/diEAEFly9ak>Practical Parallelism in C++: Introduction </a>| Threads, Concurrency, Parallelism | <a href=https://github.com/CoffeeBeforeArch/practical_parallelism_in_cpp/blob/master/intro/intro/call_from.cpp>call_from.cpp</a> |
