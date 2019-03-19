@@ -1,0 +1,22 @@
+-r
+C:\Users\TheOtherArchitect\source\repos\CoffeeBeforeArch\practical_parallelism_in_cpp\intro\intro\My Inspector Results - intro\r000ti3
+--check-deadlock
+--check-potential-deadlock
+--save-stack-on-lock-creation
+--check-datarace
+--no-terminate-on-deadlock
+--resolution=fine
+--no-check-stack-access
+--stack-depth=16
+--sampling-budget=5
+--1cell-mode=last-write
+--tool=tclcore
+--save-stack-on-first-access
+--save-stack-on-allocation
+--check-cross-thread-stack-access
+--no-emit-ctsa-diagnostics
+--no-close-console
+--mrte-mode=auto
+--heartbeat=1
+--
+C:\Users\TheOtherArchitect\source\repos\CoffeeBeforeArch\practical_parallelism_in_cpp\intro\Debug\intro.exe
