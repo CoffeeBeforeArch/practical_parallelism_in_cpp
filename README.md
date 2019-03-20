@@ -15,3 +15,4 @@ IDE: Visual Studio 2017
 | Video | Concepts | Files |
 | ----- | -------- | ----- |
 |<a href=https://youtu.be/diEAEFly9ak>Practical Parallelism in C++: Introduction </a>| Threads, Concurrency, Parallelism | <a href=https://github.com/CoffeeBeforeArch/practical_parallelism_in_cpp/blob/master/intro/intro/call_from.cpp>call_from.cpp</a> |
+|<a href=https://youtu.be/V9zrbR_OzIA>Practical Parallelism in C++: Mutex Basics </a>| Mutex Locks, Critical Sections | <a href=https://github.com/CoffeeBeforeArch/practical_parallelism_in_cpp/blob/master/lock_basics/lock_basics/lock_basics.cpp>mutex_basics.cpp</a> |
