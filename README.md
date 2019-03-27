@@ -7,9 +7,13 @@ Suggestions for specific content can be sent to: CoffeeBeforeArch@gmail.com
 
 
 ## Environment 
-Operating System: Windows 10
+Operating System: Windows 10 & Ubuntu 18.04
 
 IDE: Visual Studio 2017
+
+Text Editor: VIM
+
+Thread Interfaces: Windows API, Pthreads, C++11 Standard
 
 ## Concepts covered in each video
 | Video | Concepts | Files |
