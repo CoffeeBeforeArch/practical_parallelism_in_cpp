@@ -75,7 +75,7 @@ void *ge_parallel(void *args){
 
     for(int i = 0; i < N; i++){
         // Only one thread should do pivot calculations at a time
-        if((i >= start_row && i) < (end_row)){
+        if((i >= start_row) && (i < end_row)){
             // Normalize this row to the pivot
             float pivot = matrix[i * N + i];
             for(int j = i + 1; j < N; j++){
@@ -117,23 +117,6 @@ void *ge_parallel(void *args){
                 matrix[j * N + i] = 0;
             }
         }
-        
-        // Last thread resets the counter in the critical section
-        pthread_mutex_lock(mtx);
-
-        *counter -= 1;
-        // We are the last thread
-        if(*counter == 0){
-            *counter = num_threads;
-            // Broadcast the condition to waiting threads
-            pthread_cond_broadcast(cond);
-        }else{
-            // Go to sleep until condition is broadcasted
-            pthread_cond_wait(cond, mtx);
-        }
-
-        // Unlock at the end of the critical section
-        pthread_mutex_unlock(mtx);
     }
 
     return 0;
