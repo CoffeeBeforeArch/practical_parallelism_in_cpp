@@ -80,4 +80,3 @@ void verify_solution(float *matrix1, float *matrix2, int N){
     }
 }
 
-
