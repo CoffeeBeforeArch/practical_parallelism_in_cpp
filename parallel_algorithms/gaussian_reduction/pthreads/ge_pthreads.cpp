@@ -15,6 +15,8 @@ struct Args {
     // Thread ID
     int tid;
     int num_threads;
+    int start_row;
+    int end_row;
     float *matrix;
     int N;
     pthread_mutex_t *mtx;
@@ -62,21 +64,18 @@ void ge_serial(float *matrix, int n){
 void *ge_parallel(void *args){
     // Unpack Arguments to struct
     Args *local_args = (Args*)args;
-    int tid = local_args->tid;
+    int start_row = local_args->start_row;
+    int end_row = local_args->end_row;
     int num_threads = local_args->num_threads;
     float *matrix = local_args->matrix;
     int N = local_args->N;
     int *counter = local_args->counter;
     pthread_mutex_t *mtx = local_args->mtx;
     pthread_cond_t *cond = local_args->cond;
-    
-    // Keep track of rows for this thread
-    int rows_per_thread = N / num_threads;
-    int start_row = rows_per_thread * tid;
 
     for(int i = 0; i < N; i++){
         // Only one thread should do pivot calculations at a time
-        if((i >= start_row && i) < (start_row + rows_per_thread)){
+        if((i >= start_row && i) < (end_row)){
             // Normalize this row to the pivot
             float pivot = matrix[i * N + i];
             for(int j = i + 1; j < N; j++){
@@ -103,8 +102,41 @@ void *ge_parallel(void *args){
 
         // Unlock at the end of the critical section
         pthread_mutex_unlock(mtx);
+
+        // Eliminate the ith column from the rest of the rows
+        for(int j = i + 1; j < end_row; j++){
+            // Check if row belongs to this thread
+            if((j >= start_row) && (j < end_row)){
+                float scale = matrix[j * N + i];
+                // Subtract from each element of the row
+                for(int l = i + 1; l < N; l++){
+                    matrix[j * N + l] -= matrix[i * N + l] * scale; 
+                }
+
+                // Use assignment for trivial case
+                matrix[j * N + i] = 0;
+            }
+        }
         
+        // Last thread resets the counter in the critical section
+        pthread_mutex_lock(mtx);
+
+        *counter -= 1;
+        // We are the last thread
+        if(*counter == 0){
+            *counter = num_threads;
+            // Broadcast the condition to waiting threads
+            pthread_cond_broadcast(cond);
+        }else{
+            // Go to sleep until condition is broadcasted
+            pthread_cond_wait(cond, mtx);
+        }
+
+        // Unlock at the end of the critical section
+        pthread_mutex_unlock(mtx);
     }
+
+    return 0;
 }
 
 // Initialize a matrix with random numbers
@@ -122,7 +154,7 @@ void init_matrix(float *matrix, int N){
 void print_matrix(float *matrix, int N){
     for(int i = 0; i < N; i++){
         for(int j = 0; j < N; j++){
-            cout << setprecision(4) << matrix[i * N + j] << " ";
+            cout << setprecision(3) << matrix[i * N + j] << "\t";
 
         }
         cout << endl;
@@ -145,11 +177,11 @@ void verify_solution(float *matrix1, float *matrix2, int N){
 
 int main(){
     // Number of threads to launch
-    int num_threads = 2;
-    
-    // Create array of thread, lock, and arguments
+    int num_threads = 8;
+
+    // Create array of thread, lock, condition, and arguments
     pthread_t threads[num_threads];
-    pthread_mutex_t mtx;
+    pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
     Args thread_args[num_threads];
 
@@ -175,6 +207,8 @@ int main(){
     // Launch threads
     for(int i = 0; i < num_threads; i++){
         thread_args[i].tid = i;
+        thread_args[i].start_row = i * (N / num_threads);
+        thread_args[i].end_row = i * (N / num_threads) + (N / num_threads);
         thread_args[i].num_threads = num_threads;
         thread_args[i].matrix = matrix_pthread;
         thread_args[i].N = N;
@@ -194,6 +228,7 @@ int main(){
    
     //verify_solution(matrix, matrix_pthread, N);
     print_matrix(matrix_pthread, N);
+    print_matrix(matrix, N);
 
     return 0;
 }
