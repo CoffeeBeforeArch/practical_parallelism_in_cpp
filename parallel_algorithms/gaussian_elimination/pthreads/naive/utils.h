@@ -4,8 +4,8 @@
 
 #include <pthread.h>
 #include <chrono>
+#include "../../common/common.h"
 
-using namespace std;
 using namespace std::chrono;
 
 struct Args {

@@ -3,7 +3,6 @@
 // By: Nick from CoffeeBeforeArch
 
 #include <stdlib.h>
-#include "../../common/common.h"
 #include "utils.h"
 
 int main(){
