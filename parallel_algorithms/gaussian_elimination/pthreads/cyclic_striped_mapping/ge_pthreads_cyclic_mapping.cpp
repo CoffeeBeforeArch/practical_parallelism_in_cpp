@@ -1,10 +1,11 @@
 // This program implements parallel gaussian elimination in C++ using
-// Pthreads (assumes square matrix)
+// Pthreads (assumes square matrix) and assigns rows to each thread
+// usign cyclic striped mapping for load balancing
 // By: Nick from CoffeeBeforeArch
 
 #include <pthread.h>
 #include <stdlib.h>
-#include "../common/common.h"
+#include "../../common/common.h"
 #include "utils.h"
 
 int main(){
@@ -12,7 +13,7 @@ int main(){
     int num_threads = 4;
 
     // Dimensions of square matrix
-    int N = 8;
+    int N = 2048;
 
     // Declare our problem matrices
     float *matrix;
@@ -36,10 +37,10 @@ int main(){
     join_threads(num_threads, threads);
 
     // Call the serial version for our reference solution
-    ge_serial(matrix, N);
+    //ge_serial(matrix, N);
  
     // Verify the solution
-    verify_solution(matrix, matrix_pthread, N);
+    //verify_solution(matrix, matrix_pthread, N);
 
     return 0;
 }
