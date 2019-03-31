@@ -118,6 +118,7 @@ void *ge_parallel(void *args){
 
     // Stop monitoring when last thread exits
     perf_cycle(num_threads, counter, mtx, cond, end);
+
     return 0;
 }
 

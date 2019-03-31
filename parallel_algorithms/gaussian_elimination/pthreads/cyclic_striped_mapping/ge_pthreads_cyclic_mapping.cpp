@@ -3,7 +3,6 @@
 // usign cyclic striped mapping for load balancing
 // By: Nick from CoffeeBeforeArch
 
-#include <pthread.h>
 #include <stdlib.h>
 #include "../../common/common.h"
 #include "utils.h"
@@ -13,7 +12,7 @@ int main(){
     int num_threads = 4;
 
     // Dimensions of square matrix
-    int N = 2048;
+    int N = 8;
 
     // Declare our problem matrices
     float *matrix;
@@ -31,16 +30,25 @@ int main(){
     memcpy(matrix_pthread, matrix, bytes);
     
     // Launch the threads via a helper function
-    pthread_t *threads = launch_threads(num_threads, matrix_pthread, N);
+    launch_threads(num_threads, matrix_pthread, N);
 
-    // Join threads via a helper function
-    join_threads(num_threads, threads);
+    // Create timers for our serial version
+    high_resolution_clock::time_point start;
+    high_resolution_clock::time_point end;
 
     // Call the serial version for our reference solution
-    //ge_serial(matrix, N);
+    start = high_resolution_clock::now();
+    ge_serial(matrix, N);
+    end = high_resolution_clock::now();
  
+    // Cast timers as double to print
+    duration<double> elapsed = duration_cast<duration<double>>(end - start);
+
+    // Print out the elapsed time
+    cout << "Elapsed time serial = " << elapsed.count() << " seconds" <<  endl;
+
     // Verify the solution
-    //verify_solution(matrix, matrix_pthread, N);
+    verify_solution(matrix, matrix_pthread, N);
 
     return 0;
 }
