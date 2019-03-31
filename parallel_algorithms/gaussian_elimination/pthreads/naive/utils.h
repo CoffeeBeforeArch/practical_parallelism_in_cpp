@@ -2,6 +2,12 @@
 // Gaussian Elimination
 // By: Nick from CoffeeBeforeArch
 
+#include <pthread.h>
+#include <chrono>
+
+using namespace std;
+using namespace std::chrono;
+
 struct Args {
     // First row assigned to this thread
     int start_row;
@@ -13,7 +19,42 @@ struct Args {
     int N;
     // Barrier to synchronize at
     pthread_barrier_t *barrier;
+    // Variables needed for timing
+    int num_threads;
+    int *counter;
+    pthread_mutex_t *mtx;
+    pthread_cond_t *cond;
+    high_resolution_clock::time_point *start;
+    high_resolution_clock::time_point *end;
 };
+
+void perf_cycle(int num_threads, int *counter, pthread_mutex_t *mtx,
+        pthread_cond_t *cond,
+        high_resolution_clock::time_point *time){
+    // Get the lock
+    pthread_mutex_lock(mtx);
+
+    // Atomically decrement number of outstanding threads
+    *counter -= 1;
+    // Check if we are the last thread
+    // If not, wait to be signaled
+    if(*counter == 0){
+        // Update a timing variable
+        *time = high_resolution_clock::now();
+
+        // Reset the counter
+        *counter = num_threads;
+
+        // Signal everyone to continue
+        pthread_cond_broadcast(cond);
+    }else{
+        // Wait for the last thread before continuing
+        pthread_cond_wait(cond, mtx);
+    }
+
+    // Everyone unlocks
+    pthread_mutex_unlock(mtx);
+}
 
 // Pthread function for computing Gaussian Elimination
 // Takes a pointer to a struct of args as an argument
@@ -27,6 +68,16 @@ void *ge_parallel(void *args){
     float *matrix = local_args->matrix;
     int N = local_args->N;
     pthread_barrier_t *barrier = local_args->barrier;
+
+    int num_threads = local_args->num_threads;
+    int *counter = local_args->counter;
+    pthread_mutex_t *mtx = local_args->mtx;
+    pthread_cond_t *cond = local_args->cond;
+    high_resolution_clock::time_point *start = local_args->start;
+    high_resolution_clock::time_point *end = local_args->end;
+
+    // Wait for all threads to be created before profiling
+    perf_cycle(num_threads, counter, mtx, cond, start);
 
     // Loop over all rows in the matrix
     for(int i = 0; i < N; i++){
@@ -65,11 +116,13 @@ void *ge_parallel(void *args){
         }
     }
 
+    // Stop monitoring when last thread exits
+    perf_cycle(num_threads, counter, mtx, cond, end);
     return 0;
 }
 
 // Helper function create thread 
-pthread_t *launch_threads(int num_threads, float* matrix, int N){
+void launch_threads(int num_threads, float* matrix, int N){
 
     // Create array of thread objects we will launch
     pthread_t *threads = new pthread_t[num_threads];
@@ -81,6 +134,15 @@ pthread_t *launch_threads(int num_threads, float* matrix, int N){
     // Create an array of structs to pass to the threads
     Args *thread_args = new Args[num_threads];
 
+    // Create variables for performance monitoring
+    int *counter = new int(num_threads);
+    pthread_mutex_t *mtx = new pthread_mutex_t(PTHREAD_MUTEX_INITIALIZER);
+    pthread_cond_t *cond = new pthread_cond_t(PTHREAD_COND_INITIALIZER);
+    high_resolution_clock::time_point *start =
+        new high_resolution_clock::time_point;
+    high_resolution_clock::time_point *end =
+        new high_resolution_clock::time_point;
+
     // Launch threads
     for(int i = 0; i < num_threads; i++){
         // Pack struct with its arguments
@@ -89,20 +151,26 @@ pthread_t *launch_threads(int num_threads, float* matrix, int N){
         thread_args[i].matrix = matrix;
         thread_args[i].N = N;
         thread_args[i].barrier = barrier;
-        
+
+        thread_args[i].num_threads = num_threads;
+        thread_args[i].counter = counter;
+        thread_args[i].mtx = mtx;
+        thread_args[i].cond = cond;
+        thread_args[i].start = start;
+        thread_args[i].end = end;
+
         // Launch the thread
         pthread_create(&threads[i], NULL, ge_parallel, (void*)&thread_args[i]);
     }
 
-    return threads;
+    for(int i = 0; i < num_threads; i++){
+        pthread_join(threads[i], NULL);
+    }
+
+    // Cast timers as double to print
+    duration<double> elapsed = duration_cast<duration<double>>(*thread_args[0].end - *thread_args[0].start);
+
+    // Print out the elapsed time
+    cout << "Elapsed time parallel = " << elapsed.count() << " seconds" <<  endl;
 }
 
-// Helper function to join threads
-// Takes the number of threads, and pointer to array of threads as
-// arguments
-void join_threads(int num_threads, pthread_t *threads){
-    void *ret;
-    for(int i = 0; i < num_threads; i++){
-        pthread_join(threads[i], &ret);
-    }
-}

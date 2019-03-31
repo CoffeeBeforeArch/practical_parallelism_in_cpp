@@ -2,14 +2,13 @@
 // Pthreads (assumes square matrix)
 // By: Nick from CoffeeBeforeArch
 
-#include <pthread.h>
 #include <stdlib.h>
 #include "../../common/common.h"
 #include "utils.h"
 
 int main(){
     // Number of threads to launch
-    int num_threads = 4;
+    int num_threads = 2;
 
     // Dimensions of square matrix
     int N = 8;
@@ -24,22 +23,33 @@ int main(){
     // Allocate space for our matrices
     matrix = (float*)malloc(bytes);
     matrix_pthread = (float*)malloc(bytes);
-   
+
     // Initialize a matrix and copy it
     init_matrix(matrix, N);
     memcpy(matrix_pthread, matrix, bytes);
-    
-    // Launch the threads via a helper function
-    pthread_t *threads = launch_threads(num_threads, matrix_pthread, N);
 
-    // Join threads via a helper function
-    join_threads(num_threads, threads);
+    // Launch the threads via a helper function
+    // Prints out time in seconds
+    launch_threads(num_threads, matrix_pthread, N);
+
+    // Create timers for our serial version
+    high_resolution_clock::time_point start;
+    high_resolution_clock::time_point end;
 
     // Call the serial version for our reference solution
+    start = high_resolution_clock::now();
     ge_serial(matrix, N);
- 
+    end = high_resolution_clock::now();
+
+    // Cast timers as double to print
+    duration<double> elapsed = duration_cast<duration<double>>(end - start);
+
+    // Print out the elapsed time
+    cout << "Elapsed time serial = " << elapsed.count() << " seconds" <<  endl;
+
     // Verify the solution
     verify_solution(matrix, matrix_pthread, N);
 
     return 0;
 }
+
