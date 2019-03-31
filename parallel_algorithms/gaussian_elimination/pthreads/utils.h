@@ -3,8 +3,6 @@
 // By: Nick from CoffeeBeforeArch
 
 struct Args {
-    // Number of threads in the program
-    int num_threads;
     // First row assigned to this thread
     int start_row;
     // One past the last row for this thread
@@ -13,40 +11,9 @@ struct Args {
     float *matrix;
     // Dimensions of the square matrix
     int N;
-    // Counter used to track arrival of threads
-    int *counter;
-    // Mutex lock to ensure counter updated atomically
-    pthread_mutex_t *mtx;
-    // Condition for threads to wait on
-    pthread_cond_t *cond;
+    // Barrier to synchronize at
+    pthread_barrier_t *barrier;
 };
-
-// This function atomically decrements a counter for waiting threads.
-// All threads must arrive at this location before the counter is reset,
-// then all threads are signaled to continue
-// Takes a mutex, outstanding thread count, total number of threads, and
-// condition variable as arguments
-void barrier(pthread_mutex_t *mtx, int *counter, int num_threads, 
-        pthread_cond_t *cond){
-        // Last thread resets the counter in the critical section
-        pthread_mutex_lock(mtx);
-
-        // Decrement threads as they arrive
-        *counter -= 1;
-
-        // We are the last thread
-        if(*counter == 0){
-            *counter = num_threads;
-            // Broadcast the condition to waiting threads
-            pthread_cond_broadcast(cond);
-        }else{
-            // Go to sleep until condition is broadcasted
-            pthread_cond_wait(cond, mtx);
-        }
-
-        // Unlock at the end of the critical section
-        pthread_mutex_unlock(mtx);
-}
 
 // Pthread function for computing Gaussian Elimination
 // Takes a pointer to a struct of args as an argument
@@ -55,14 +22,11 @@ void *ge_parallel(void *args){
     Args *local_args = (Args*)args;
 
     // Unpack the arguments
-    int num_threads = local_args->num_threads;
     int start_row = local_args->start_row;
     int end_row = local_args->end_row;
     float *matrix = local_args->matrix;
     int N = local_args->N;
-    int *counter = local_args->counter;
-    pthread_mutex_t *mtx = local_args->mtx;
-    pthread_cond_t *cond = local_args->cond;
+    pthread_barrier_t *barrier = local_args->barrier;
 
     // Loop over all rows in the matrix
     for(int i = 0; i < N; i++){
@@ -81,7 +45,7 @@ void *ge_parallel(void *args){
         }
 
         // All threads must wait for pivot before continuing
-        barrier(mtx, counter, num_threads, cond);
+        pthread_barrier_wait(barrier);
 
         // Loop over the rest of the rows to eliminate the ith element
         for(int j = i + 1; j < end_row; j++){
@@ -110,29 +74,21 @@ pthread_t *launch_threads(int num_threads, float* matrix, int N){
     // Create array of thread objects we will launch
     pthread_t *threads = new pthread_t[num_threads];
 
-    // Create a mutex lock and initialize it
-    pthread_mutex_t *mtx = new pthread_mutex_t(PTHREAD_MUTEX_INITIALIZER);
-
-    // Create a condition and initialize it
-    pthread_cond_t *cond = new pthread_cond_t(PTHREAD_COND_INITIALIZER);
+    // Create a barrier and initialize it
+    pthread_barrier_t *barrier = new pthread_barrier_t;
+    pthread_barrier_init(barrier, NULL, num_threads);
 
     // Create an array of structs to pass to the threads
     Args *thread_args = new Args[num_threads];
-
-    // Create our progress counter for the threads
-    int *counter = new int(num_threads);
 
     // Launch threads
     for(int i = 0; i < num_threads; i++){
         // Pack struct with its arguments
         thread_args[i].start_row = i * (N / num_threads);
         thread_args[i].end_row = i * (N / num_threads) + (N / num_threads);
-        thread_args[i].num_threads = num_threads;
         thread_args[i].matrix = matrix;
         thread_args[i].N = N;
-        thread_args[i].counter = counter;
-        thread_args[i].mtx = mtx;
-        thread_args[i].cond = cond;
+        thread_args[i].barrier = barrier;
         
         // Launch the thread
         pthread_create(&threads[i], NULL, ge_parallel, (void*)&thread_args[i]);

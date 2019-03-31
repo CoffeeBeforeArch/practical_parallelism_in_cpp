@@ -37,7 +37,7 @@ int main(){
 
     // Call the serial version for our reference solution
     ge_serial(matrix, N);
-
+ 
     // Verify the solution
     verify_solution(matrix, matrix_pthread, N);
 
