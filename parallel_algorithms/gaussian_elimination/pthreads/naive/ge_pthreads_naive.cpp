@@ -20,8 +20,8 @@ int main(){
     size_t bytes = N * N * sizeof(float);
 
     // Allocate space for our matrices
-    matrix = (float*)malloc(bytes);
-    matrix_pthread = (float*)malloc(bytes);
+    matrix = new float[N * N];
+    matrix_pthread = new float[N * N];
 
     // Initialize a matrix and copy it
     init_matrix(matrix, N);
@@ -48,6 +48,10 @@ int main(){
 
     // Verify the solution
     verify_solution(matrix, matrix_pthread, N);
+    
+    // Free heap-allocated memory
+    delete[] matrix;
+    delete[] matrix_pthread;
 
     return 0;
 }

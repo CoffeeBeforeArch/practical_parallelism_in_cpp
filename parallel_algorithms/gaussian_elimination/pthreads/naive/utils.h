@@ -126,23 +126,21 @@ void *ge_parallel(void *args){
 void launch_threads(int num_threads, float* matrix, int N){
 
     // Create array of thread objects we will launch
-    pthread_t *threads = new pthread_t[num_threads];
+    pthread_t threads[num_threads];
 
     // Create a barrier and initialize it
-    pthread_barrier_t *barrier = new pthread_barrier_t;
-    pthread_barrier_init(barrier, NULL, num_threads);
+    pthread_barrier_t barrier;
+    pthread_barrier_init(&barrier, NULL, num_threads);
 
     // Create an array of structs to pass to the threads
-    Args *thread_args = new Args[num_threads];
+    Args thread_args[num_threads];
 
     // Create variables for performance monitoring
-    int *counter = new int(num_threads);
-    pthread_mutex_t *mtx = new pthread_mutex_t(PTHREAD_MUTEX_INITIALIZER);
-    pthread_cond_t *cond = new pthread_cond_t(PTHREAD_COND_INITIALIZER);
-    high_resolution_clock::time_point *start =
-        new high_resolution_clock::time_point;
-    high_resolution_clock::time_point *end =
-        new high_resolution_clock::time_point;
+    int counter = num_threads;
+    pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+    high_resolution_clock::time_point start;
+    high_resolution_clock::time_point end;
 
     // Launch threads
     for(int i = 0; i < num_threads; i++){
@@ -151,14 +149,14 @@ void launch_threads(int num_threads, float* matrix, int N){
         thread_args[i].end_row = i * (N / num_threads) + (N / num_threads);
         thread_args[i].matrix = matrix;
         thread_args[i].N = N;
-        thread_args[i].barrier = barrier;
+        thread_args[i].barrier = &barrier;
 
         thread_args[i].num_threads = num_threads;
-        thread_args[i].counter = counter;
-        thread_args[i].mtx = mtx;
-        thread_args[i].cond = cond;
-        thread_args[i].start = start;
-        thread_args[i].end = end;
+        thread_args[i].counter = &counter;
+        thread_args[i].mtx = &mtx;
+        thread_args[i].cond = &cond;
+        thread_args[i].start = &start;
+        thread_args[i].end = &end;
 
         // Launch the thread
         pthread_create(&threads[i], NULL, ge_parallel, (void*)&thread_args[i]);
@@ -169,7 +167,7 @@ void launch_threads(int num_threads, float* matrix, int N){
     }
 
     // Cast timers as double to print
-    duration<double> elapsed = duration_cast<duration<double>>(*thread_args[0].end - *thread_args[0].start);
+    duration<double> elapsed = duration_cast<duration<double>>(end - start);
 
     // Print out the elapsed time
     cout << "Elapsed time parallel = " << elapsed.count() << " seconds" <<  endl;
