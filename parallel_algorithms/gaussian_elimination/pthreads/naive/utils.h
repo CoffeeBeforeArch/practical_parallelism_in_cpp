@@ -80,7 +80,7 @@ void *ge_parallel(void *args){
     perf_cycle(num_threads, counter, mtx, cond, start);
 
     // Loop over all rows in the matrix
-    for(int i = 0; i < N; i++){
+    for(int i = 0; i < N - 1; i++){
         // Check if pivot row belongs to this thread
         if((i >= start_row) && (i < end_row)){
             // Normalize this row to the pivot
@@ -103,7 +103,7 @@ void *ge_parallel(void *args){
             // Check if row belongs to this thread
             if((j >= start_row) && (j < end_row)){
                 // Scale the subtraction by the ith element of this row
-                float scale = -1 * matrix[j * N + i];
+                float scale = matrix[j * N + i];
 
                 // Subtract from each element of the row
                 for(int l = i + 1; l < N; l++){
@@ -114,6 +114,11 @@ void *ge_parallel(void *args){
                 matrix[j * N + i] = 0;
             }
         }
+    }
+
+    // Handle trivial last row with only 1 element
+    if((N - 1) >= start_row){
+        matrix[N-1 * N + N - 1] = 1;
     }
 
     // Stop monitoring when last thread exits

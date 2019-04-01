@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <cstring>
 #include <assert.h>
+#include <time.h>
 
 using namespace std;
 
@@ -14,7 +15,7 @@ using namespace std;
 void ge_serial(float *matrix, int n){
     // Iterate over each row in the matrix
     float pivot;
-    for(int i = 0; i < n; i++){
+    for(int i = 0; i < n - 1; i++){
         // Pivot will be the diagonal
         pivot = matrix[i * n + i];
 
@@ -31,7 +32,7 @@ void ge_serial(float *matrix, int n){
         float scale;
         for(int j = i + 1; j < n; j++){
             // Factor we will use to scale subtraction by
-            scale = -1 * matrix[j * n + i];
+            scale = matrix[j * n + i];
 
             // Iterate over the remaining columns
             for(int k = i + 1; k < n; k++){
@@ -42,14 +43,19 @@ void ge_serial(float *matrix, int n){
             matrix[j * n + i] = 0;
         }
     }
+
+    // Trivial case of last row with only one element
+    matrix[n - 1 * n + n - 1] = 1;
 }
 
 // Initialize a matrix with random numbers
 // Takes a matrix and its dimension as arguments
 void init_matrix(float *matrix, int N){
+    srand(time(NULL));
     for(int i = 0; i < N; i++){
         for(int j = 0; j < N; j++){
-            matrix[i * N + j] = rand(); 
+            // Random number between 100 and -100
+            matrix[i * N + j] = (float(rand())/float(RAND_MAX)) * (100 - -100) + -100; 
         }
     }
 }

@@ -10,7 +10,7 @@ int main(){
     int num_threads = 2;
 
     // Dimensions of square matrix
-    int N = 8;
+    int N = 2048;
 
     // Declare our problem matrices
     float *matrix;
@@ -39,7 +39,7 @@ int main(){
     start = high_resolution_clock::now();
     ge_serial(matrix, N);
     end = high_resolution_clock::now();
-
+    
     // Cast timers as double to print
     duration<double> elapsed = duration_cast<duration<double>>(end - start);
 
