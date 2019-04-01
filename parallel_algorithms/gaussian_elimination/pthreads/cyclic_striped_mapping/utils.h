@@ -101,7 +101,7 @@ void *ge_parallel(void *args){
             // Check if row belongs to this thread
             if((j % num_threads) == tid){
                 // Scale the subtraction by the ith element of this row
-                float scale = matrix[j * N + i];
+                float scale = -1 * matrix[j * N + i];
 
                 // Subtract from each element of the row
                 for(int l = i + 1; l < N; l++){

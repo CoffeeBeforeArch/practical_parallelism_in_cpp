@@ -31,7 +31,7 @@ void ge_serial(float *matrix, int n){
         float scale;
         for(int j = i + 1; j < n; j++){
             // Factor we will use to scale subtraction by
-            scale = matrix[j * n + i];
+            scale = -1 * matrix[j * n + i];
 
             // Iterate over the remaining columns
             for(int k = i + 1; k < n; k++){
