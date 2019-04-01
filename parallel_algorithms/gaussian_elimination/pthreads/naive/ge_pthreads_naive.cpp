@@ -7,7 +7,7 @@
 
 int main(){
     // Number of threads to launch
-    int num_threads = 2;
+    int num_threads = 8;
 
     // Dimensions of square matrix
     int N = 2048;

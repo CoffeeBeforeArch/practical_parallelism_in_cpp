@@ -8,10 +8,10 @@
 
 int main(){
     // Number of threads to launch
-    int num_threads = 4;
+    int num_threads = 8;
 
     // Dimensions of square matrix
-    int N = 8;
+    int N = 2048;
 
     // Declare our problem matrices
     float *matrix;

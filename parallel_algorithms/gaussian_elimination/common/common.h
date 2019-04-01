@@ -45,7 +45,7 @@ void ge_serial(float *matrix, int n){
     }
 
     // Trivial case of last row with only one element
-    matrix[n - 1 * n + n - 1] = 1;
+    matrix[(n - 1) * n + n - 1] = 1;
 }
 
 // Initialize a matrix with random numbers

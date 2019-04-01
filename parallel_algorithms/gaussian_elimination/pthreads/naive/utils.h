@@ -118,7 +118,7 @@ void *ge_parallel(void *args){
 
     // Handle trivial last row with only 1 element
     if((N - 1) >= start_row){
-        matrix[N-1 * N + N - 1] = 1;
+        matrix[(N - 1) * N + N - 1] = 1;
     }
 
     // Stop monitoring when last thread exits
