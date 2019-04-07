@@ -2,7 +2,6 @@
 // By: Nick from CoffeeBeforeArch
 
 #include <iostream>
-#include <string>
 #include <mpi.h>
 
 using namespace std;
@@ -35,9 +34,11 @@ int main(int argc, char *argv[]){
     MPI_Get_processor_name(name, &length);
 
     // Print out for each rank
-    cout << "Hello, MPI! Processor: " << rank << " size " << size <<
-        " on " << name << endl << flush;
+    cout << "Hello, MPI! Rank: " << rank << " size " << size <<
+        " on " << name << endl;
 
     // Terminate MPI execution environment
     MPI_Finalize();
+
+    return 0;
 }
