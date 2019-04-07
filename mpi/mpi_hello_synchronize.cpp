@@ -2,6 +2,7 @@
 // with synchronized output
 // By: Nick from CoffeeBeforeArch
 
+#include <iostream>
 #include <stdio.h>
 #include <mpi.h>
 
@@ -37,13 +38,13 @@ int main(int argc, char *argv[]){
     // Pack these values together into a string
     int buffer_len = 150;
     char buffer[buffer_len];
-    sprintf(buffer, "Hello, MPI! Rank: %d Total: %d Machine %s",
+    sprintf(buffer, "Hello, MPI! Rank: %d Total: %d Machine: %s",
             rank, size, name);
 
     // Synchronize so we can remove interleaved output
     if(rank == 0){
         // Always print from rank 0
-        printf("%s\n", buffer);
+        cout << buffer << endl;
         for(int i = 1; i < size; i++){
             // Takes buffer, size, type, source, tag, communicator, and status
             MPI_Recv(buffer, buffer_len, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG,

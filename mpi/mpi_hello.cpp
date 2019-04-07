@@ -34,8 +34,8 @@ int main(int argc, char *argv[]){
     MPI_Get_processor_name(name, &length);
 
     // Print out for each rank
-    cout << "Hello, MPI! Rank: " << rank << " size " << size <<
-        " on " << name << endl;
+    cout << "Hello, MPI! Rank: " << rank << " Total: " << size <<
+        " Machine: " << name << endl;
 
     // Terminate MPI execution environment
     MPI_Finalize();
