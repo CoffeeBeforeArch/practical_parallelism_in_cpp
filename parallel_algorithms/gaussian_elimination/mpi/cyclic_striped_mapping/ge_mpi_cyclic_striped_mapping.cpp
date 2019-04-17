@@ -1,5 +1,5 @@
 // This program implements parallel gaussian elimination in C++ using
-// MPI and block mapping (assumes square matrix)
+// MPI and cyclic striped mapping (assumes square matrix)
 // By: Nick from CoffeeBeforeArch
 
 #include <stdlib.h>

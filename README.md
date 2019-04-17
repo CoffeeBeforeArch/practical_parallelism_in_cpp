@@ -13,7 +13,7 @@ IDE: Visual Studio 2017
 
 Text Editor: VIM
 
-Thread Interfaces: Windows API, Pthreads, C++11 Standard
+Thread Interfaces: Windows API, Pthreads, C++11 Standard, MPI
 
 ## Concepts covered in each video
 | Video | Concepts | Files |
