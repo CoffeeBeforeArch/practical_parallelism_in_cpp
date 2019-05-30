@@ -44,16 +44,23 @@ int main(int argc, char *argv[]){
     float *matrix = new float[N * N];
     init_matrix(matrix, N);
     
+    // Print the output and the time
+    if(rank == 0){
+        print_matrix(matrix, N);
+    }
+
     // Declare our sub-matrix for each process
     float *sub_matrix = new float[N * num_rows];
 
-    // Send a sub-matrix to each process
-    MPI_Scatter(matrix, N * num_rows, MPI_FLOAT, sub_matrix,
-            N * num_rows, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    // Send a sub-matrix to each process (but striped)
+    for(int i = 0; i < num_rows; i++){
+        MPI_Scatter(matrix, N, MPI_FLOAT, sub_matrix + (i * N),
+            N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    }
 
     /*
      * Gaussian Elimination:
-     * One row normalizes the pivot row, then sends it to all
+     * One rank normalizes the pivot row, then sends it to all
      * later ranks for elimination
      */
     // Allocate space for a single row to be sent to this rank
@@ -62,58 +69,6 @@ int main(int argc, char *argv[]){
     // Get start time
     if(rank == 0){
         t_start = MPI_Wtime();
-    }
-
-    // Receivers go here
-    for(int i = 0; i < (rank * num_rows); i++){
-        // Wait for the preceeding ranks to forward us a row
-        MPI_Bcast(row, N, MPI_FLOAT, i / num_rows, MPI_COMM_WORLD);
-
-        // Eliminate from this element from all rows mapped to this
-        // rank
-        for(int j = 0; j < num_rows; j++){
-            // Subtract from all other elements in the row
-            for(int k = i + 1; k < N; k++){
-                sub_matrix[j * N + k] -= sub_matrix[j * N + i] * row[k];
-            }
-
-            // Eliminate the element in the same column as the pivot row
-            sub_matrix[j * N + i] = 0;
-        }
-    }
-
-    // Senders go here
-    int pivot_column;
-    for(int i = 0; i < num_rows; i++){
-        // Normalize this row to the pivot
-        pivot_column = rank * num_rows + i;
-        for(int j = pivot_column + 1; j < N; j++){
-           sub_matrix[i * N + j] /= sub_matrix[i * N + pivot_column];
-        }
-
-        // Normalize trivial case
-        sub_matrix[i * N + pivot_column] = 1;
-
-        // Fill row to be sent
-        memcpy(row, sub_matrix + (i * N), N * sizeof(float));
-
-        // Broadcast the normalized row to everyone else;
-        MPI_Bcast(row, N, MPI_FLOAT, rank, MPI_COMM_WORLD);
-
-        // Update the rest of the rows for this rank
-        for(int j = i + 1; j < num_rows; j++){
-            for(int k = pivot_column + 1; k < N; k++){
-                sub_matrix[j * N + k] -= sub_matrix[j * N + i] * row[k];
-            }
-            
-            // Eliminate the trivial case
-            sub_matrix[j * N + pivot_column] = 0;
-        }
-    }
-
-    // Finished ranks must still wait with synchronous broadcast
-    for(int i = rank * num_rows + 1; i < N; i++){
-        MPI_Bcast(row, N, MPI_FLOAT, i / num_rows, MPI_COMM_WORLD);
     }
 
     // Barrier to track when calculations are done
@@ -129,9 +84,15 @@ int main(int argc, char *argv[]){
      * Collect all Sub-Matrices
      * All sub-matrices are gathered using the gather function
      */
-    MPI_Gather(sub_matrix, N * num_rows, MPI_FLOAT, matrix,
-            N * num_rows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
+    for(int i = 0; i < num_rows; i++){
+        // Get 1 rows from each rank
+        // Offset by 1 row in the sub-matrix
+        // Offset by 1 sub-matrix in the total matrix
+        MPI_Gather(sub_matrix + (i * N), N, MPI_FLOAT,
+                matrix + (i * N * num_rows), N, MPI_FLOAT, 0,
+                MPI_COMM_WORLD);
+    }
 
     MPI_Finalize();
 
