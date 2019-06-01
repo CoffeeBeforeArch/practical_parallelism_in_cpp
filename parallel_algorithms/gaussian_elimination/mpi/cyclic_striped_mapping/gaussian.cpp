@@ -44,18 +44,13 @@ int main(int argc, char *argv[]){
     float *matrix = new float[N * N];
     init_matrix(matrix, N);
     
-    // Print the output and the time
-    if(rank == 0){
-        print_matrix(matrix, N);
-    }
-
     // Declare our sub-matrix for each process
     float *sub_matrix = new float[N * num_rows];
 
     // Send a sub-matrix to each process (but striped)
     for(int i = 0; i < num_rows; i++){
-        MPI_Scatter(matrix, N, MPI_FLOAT, sub_matrix + (i * N),
-            N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        MPI_Scatter(matrix + (i * num_rows * N), N, MPI_FLOAT,
+                sub_matrix + (i * N), N, MPI_FLOAT, 0, MPI_COMM_WORLD);
     }
 
     /*
