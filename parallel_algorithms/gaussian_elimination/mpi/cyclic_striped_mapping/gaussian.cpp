@@ -70,27 +70,32 @@ int main(int argc, char *argv[]){
         t_start = MPI_Wtime();
     }
 
-    // Iterate over all rows
+    // Some variables to replace calculations with variables
     int local_row;
     int mapped_rank;
+
+    // Value of pivot
     float pivot;
+
+    // Iterate over all rows
     for(int i = 0; i < N; i++){
         // Caclulate the local row in the sub-matrix
-        local_row = i / num_rows;
+        local_row = i % num_rows;
         mapped_rank = i % size;
         
         // If the row belongs to us
         if(mapped_rank == rank){
             // Get the pivot on the diagonal
-            pivot = sub_matrix[i * N + i];
+            pivot = sub_matrix[local_row * N + i];
 
             // Divide the remaining elements in the row
             for(int j = i + 1; j < N; j++){
-                sub_matrix[i * N + j] /= pivot;
+                sub_matrix[local_row * N + j] /= pivot;
             }
 
             // Use assignment instead of division for the diagonal
-            sub_matrix[i * N + i] = 1;
+            sub_matrix[local_row * N + i] = 1;
+
         }else{
             continue;
         }
