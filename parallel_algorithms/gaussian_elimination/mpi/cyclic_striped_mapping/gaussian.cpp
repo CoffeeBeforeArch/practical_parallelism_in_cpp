@@ -48,9 +48,13 @@ int main(int argc, char *argv[]){
     float *sub_matrix = new float[N * num_rows];
 
     // Send a sub-matrix to each process (but striped)
-    for(int i = 0; i < num_rows; i++){
-        MPI_Scatter(matrix + (i * num_rows * N), N, MPI_FLOAT,
+    if(size > 1){
+        for(int i = 0; i < num_rows; i++){
+            MPI_Scatter(matrix + (i * num_rows * N), N, MPI_FLOAT,
                 sub_matrix + (i * N), N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        }
+    }else{
+        memcpy(sub_matrix, matrix, N * N * sizeof(float));
     }
 
     /*
@@ -66,6 +70,32 @@ int main(int argc, char *argv[]){
         t_start = MPI_Wtime();
     }
 
+    // Iterate over all rows
+    int local_row;
+    int mapped_rank;
+    float pivot;
+    for(int i = 0; i < N; i++){
+        // Caclulate the local row in the sub-matrix
+        local_row = i / num_rows;
+        mapped_rank = i % size;
+        
+        // If the row belongs to us
+        if(mapped_rank == rank){
+            // Get the pivot on the diagonal
+            pivot = sub_matrix[i * N + i];
+
+            // Divide the remaining elements in the row
+            for(int j = i + 1; j < N; j++){
+                sub_matrix[i * N + j] /= pivot;
+            }
+
+            // Use assignment instead of division for the diagonal
+            sub_matrix[i * N + i] = 1;
+        }else{
+            continue;
+        }
+    }
+
     // Barrier to track when calculations are done
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -79,14 +109,17 @@ int main(int argc, char *argv[]){
      * Collect all Sub-Matrices
      * All sub-matrices are gathered using the gather function
      */
-
-    for(int i = 0; i < num_rows; i++){
-        // Get 1 rows from each rank
-        // Offset by 1 row in the sub-matrix
-        // Offset by 1 sub-matrix in the total matrix
-        MPI_Gather(sub_matrix + (i * N), N, MPI_FLOAT,
+    if(size > 1){
+        for(int i = 0; i < num_rows; i++){
+            // Get 1 rows from each rank
+            // Offset by 1 row in the sub-matrix
+            // Offset by 1 sub-matrix in the total matrix
+            MPI_Gather(sub_matrix + (i * N), N, MPI_FLOAT,
                 matrix + (i * N * num_rows), N, MPI_FLOAT, 0,
                 MPI_COMM_WORLD);
+        }
+    }else{
+        memcpy(matrix, sub_matrix, N * N * sizeof(float));
     }
 
     MPI_Finalize();
