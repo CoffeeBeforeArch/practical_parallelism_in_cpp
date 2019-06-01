@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 
     // Get the total number ranks in this communicator
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-
+    
     // Calulate the number of rows based on the number of ranks
     int num_rows = N / size; 
 
@@ -96,8 +96,16 @@ int main(int argc, char *argv[]){
             // Use assignment instead of division for the diagonal
             sub_matrix[local_row * N + i] = 1;
 
+            // Copy the row to the row-buffer
+            memcpy(row, sub_matrix + local_row * N, N);
+
+            // Send the normalized row to all other ranks
+            MPI_Bcast(row, N, MPI_FLOAT, mapped_rank, MPI_COMM_WORLD);
+
         }else{
-            continue;
+            // Receive the row from the broadcaster
+            cout << "REC FROM " << rank << endl;
+            MPI_Bcast(row, N, MPI_FLOAT, mapped_rank, MPI_COMM_WORLD);
         }
     }
 
