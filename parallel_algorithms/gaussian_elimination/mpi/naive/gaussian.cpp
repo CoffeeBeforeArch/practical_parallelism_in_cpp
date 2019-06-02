@@ -49,9 +49,8 @@ int main(int argc, char *argv[]){
         matrix = new float [N * N];
         matrix_serial = new float [N * N];
 
-        // Initialize the matrix, and copy it for functional test
+        // Initialize the matrix
         init_matrix(matrix, N);
-        memcpy(matrix_serial, matrix, N * N * sizeof(float));
     }
     
     // Declare our sub-matrix for each process
@@ -161,8 +160,6 @@ int main(int argc, char *argv[]){
 
     // Check the result, and print the time
     if(rank == 0){
-        ge_serial(matrix_serial, N);
-        print_matrix(matrix_serial, N);
         print_matrix(matrix, N);
         cout << t_total << " Seconds" << endl;
     }
