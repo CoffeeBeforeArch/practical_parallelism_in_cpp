@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]){
     // Declare a problem size
-    int N = 8;
+    int N = 4;
 
     // Declate variables for timing
     double t_start;
@@ -42,19 +42,23 @@ int main(int argc, char *argv[]){
     // Declare our problem matrices
     // This work is duplicated just for code simplicity
     float *matrix = new float[N * N];
-    init_matrix(matrix, N);
-    
+    if(rank == 0){
+        init_matrix(matrix, N);
+    }
+
     // Declare our sub-matrix for each process
     float *sub_matrix = new float[N * num_rows];
 
-    // Send a sub-matrix to each process (but striped)
-    if(size > 1){
-        for(int i = 0; i < num_rows; i++){
-            MPI_Scatter(matrix + (i * num_rows * N), N, MPI_FLOAT,
-                sub_matrix + (i * N), N, MPI_FLOAT, 0, MPI_COMM_WORLD);
-        }
-    }else{
+    // Cyclic stripe the rows to all the ranks
+    if(size == 1){
+        // All rows to the single rank
         memcpy(sub_matrix, matrix, N * N * sizeof(float));
+    }else{
+        // Scatter "num_rows" rows to "size" processes
+        for(int i = 0; i < num_rows; i++){
+            MPI_Scatter(&matrix[i * N * num_rows], N, MPI_FLOAT,
+                &sub_matrix[i * N], N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        }
     }
 
     /*
@@ -69,43 +73,30 @@ int main(int argc, char *argv[]){
     if(rank == 0){
         t_start = MPI_Wtime();
     }
-
-    // Some variables to replace calculations with variables
+    
+    // Local variables for code clarity
     int local_row;
-    int mapped_rank;
-
-    // Value of pivot
-    float pivot;
+    int which_rank;
+    int pivot;
 
     // Iterate over all rows
     for(int i = 0; i < N; i++){
-        // Caclulate the local row in the sub-matrix
-        local_row = i % num_rows;
-        mapped_rank = i % size;
+        // Which row in the sub-matrix are we accessing?
+        local_row = i / size;
+        // Which rank does this row belong to?
+        which_rank = i % size;
         
-        // If the row belongs to us
-        if(mapped_rank == rank){
-            // Get the pivot on the diagonal
+        // Eliminate if the pivot belongs to this rank
+        if(rank == which_rank){
             pivot = sub_matrix[local_row * N + i];
-
-            // Divide the remaining elements in the row
+            
+            // Divide the rest of the row by the pivot
             for(int j = i + 1; j < N; j++){
                 sub_matrix[local_row * N + j] /= pivot;
             }
 
-            // Use assignment instead of division for the diagonal
+            // Use assignment for the trivial self-division
             sub_matrix[local_row * N + i] = 1;
-
-            // Copy the row to the row-buffer
-            memcpy(row, sub_matrix + local_row * N, N);
-
-            // Send the normalized row to all other ranks
-            MPI_Bcast(row, N, MPI_FLOAT, mapped_rank, MPI_COMM_WORLD);
-
-        }else{
-            // Receive the row from the broadcaster
-            cout << "REC FROM " << rank << endl;
-            MPI_Bcast(row, N, MPI_FLOAT, mapped_rank, MPI_COMM_WORLD);
         }
     }
 
@@ -122,19 +113,15 @@ int main(int argc, char *argv[]){
      * Collect all Sub-Matrices
      * All sub-matrices are gathered using the gather function
      */
-    if(size > 1){
-        for(int i = 0; i < num_rows; i++){
-            // Get 1 rows from each rank
-            // Offset by 1 row in the sub-matrix
-            // Offset by 1 sub-matrix in the total matrix
-            MPI_Gather(sub_matrix + (i * N), N, MPI_FLOAT,
-                matrix + (i * N * num_rows), N, MPI_FLOAT, 0,
-                MPI_COMM_WORLD);
-        }
-    }else{
+    if(size == 1){
         memcpy(matrix, sub_matrix, N * N * sizeof(float));
+    }else{
+        // Gather "size" rows at a time
+        for(int i = 0; i < num_rows; i++){
+            MPI_Gather(&sub_matrix[i * N], N, MPI_FLOAT,
+                &matrix[i * size * N], N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+        }
     }
-
     MPI_Finalize();
 
     // Print the output and the time
