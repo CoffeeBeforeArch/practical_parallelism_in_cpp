@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]){
     // Declare a problem size
-    int N = 8;
+    int N = 1024;
 
     // Declate variables for timing
     double t_start;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]){
 
     // Print the output and the time
     if(rank == 0){
-        print_matrix(matrix, N);
+        //print_matrix(matrix, N);
         cout << t_total << " Seconds" << endl;
     }
 

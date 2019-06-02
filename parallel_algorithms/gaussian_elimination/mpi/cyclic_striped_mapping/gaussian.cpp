@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]){
     // Declare a problem size
-    int N = 4;
+    int N = 1024;
 
     // Declate variables for timing
     double t_start;
@@ -78,6 +78,7 @@ int main(int argc, char *argv[]){
     int local_row;
     int which_rank;
     int pivot;
+    int scale;
 
     // Iterate over all rows
     for(int i = 0; i < N; i++){
@@ -103,9 +104,40 @@ int main(int argc, char *argv[]){
 
             // Broadcast this row to all the ranks
             MPI_Bcast(row, N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
+
+            // Eliminate for the other rows mapped to this rank
+            for(int j = local_row + 1; j < num_rows; j++){
+                scale = sub_matrix[j * N + i];
+                // Subtract the scaled value from the remaining row
+                // elements
+                for(int k = i + 1; k < N; k++){
+                    sub_matrix[j * N + k] -= scale * row[k];
+                }
+
+                // Use assignment for the trivial elimination
+                sub_matrix[j * N + i] = 0;
+            }
         }else{
             // Receive a row to use for elimination
             MPI_Bcast(row, N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
+
+            // Eliminate for all the rows in this rank's sub-matrix
+            for(int j = local_row; j < num_rows; j++){
+                if((rank > which_rank) || (j > local_row)){
+                    scale = sub_matrix[local_row * N + i];
+                
+                    // Subtract the scaled value from the remaining row
+                    // elements
+                    for(int k = i + 1; k < N; k++){
+                        sub_matrix[j * N + k] -= scale * row[k];
+                    }
+                
+                    // Use assignment for the trivial elimination
+                    sub_matrix[j * N + i] = 0;
+                }else{
+                    continue;
+                }
+           }    
         }
     }
 
@@ -135,7 +167,7 @@ int main(int argc, char *argv[]){
 
     // Print the output and the time
     if(rank == 0){
-        print_matrix(matrix, N);
+        //print_matrix(matrix, N);
         cout << t_total << " Seconds" << endl;
     }
 
