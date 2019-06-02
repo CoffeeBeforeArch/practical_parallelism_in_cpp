@@ -74,17 +74,26 @@ int main(int argc, char *argv[]){
         t_start = MPI_Wtime();
     }
 
+    // Variables for code clarity
+    int pivot;
+    int scale;
+    int column;
+    int start_row;
+
     // Receivers go here
-    for(int i = 0; i < (rank * num_rows); i++){
+    start_row = rank * num_rows;
+    for(int i = 0; i < start_row; i++){
         // Wait for the preceeding ranks to forward us a row
         MPI_Bcast(row, N, MPI_FLOAT, i / num_rows, MPI_COMM_WORLD);
 
         // Eliminate from this element from all rows mapped to this
         // rank
         for(int j = 0; j < num_rows; j++){
+            scale = sub_matrix[j * N + i];
+
             // Subtract from all other elements in the row
             for(int k = i + 1; k < N; k++){
-                sub_matrix[j * N + k] -= sub_matrix[j * N + i] * row[k];
+                sub_matrix[j * N + k] -= scale * row[k];
             }
 
             // Eliminate the element in the same column as the pivot row
@@ -93,31 +102,36 @@ int main(int argc, char *argv[]){
     }
 
     // Senders go here
-    int pivot_column;
     for(int i = 0; i < num_rows; i++){
         // Normalize this row to the pivot
-        pivot_column = rank * num_rows + i;
-        for(int j = pivot_column + 1; j < N; j++){
-           sub_matrix[i * N + j] /= sub_matrix[i * N + pivot_column];
+        column = rank * num_rows + i;
+        pivot = sub_matrix[i * N + column];
+
+        // Normalize every other element in this row to the pivot
+        for(int j = column + 1; j < N; j++){
+           sub_matrix[i * N + j] /= pivot;
         }
 
         // Normalize trivial case
-        sub_matrix[i * N + pivot_column] = 1;
+        sub_matrix[i * N + column] = 1;
 
         // Fill row to be sent
-        memcpy(row, sub_matrix + (i * N), N * sizeof(float));
+        memcpy(row, &sub_matrix[i * N], N * sizeof(float));
 
         // Broadcast the normalized row to everyone else;
         MPI_Bcast(row, N, MPI_FLOAT, rank, MPI_COMM_WORLD);
 
         // Update the rest of the rows for this rank
         for(int j = i + 1; j < num_rows; j++){
-            for(int k = pivot_column + 1; k < N; k++){
-                sub_matrix[j * N + k] -= sub_matrix[j * N + i] * row[k];
+            scale = sub_matrix[j * N + column];
+
+            // Subtract from all the elements in a lower row
+            for(int k = column + 1; k < N; k++){
+                sub_matrix[j * N + k] -= scale * row[k];
             }
             
             // Eliminate the trivial case
-            sub_matrix[j * N + pivot_column] = 0;
+            sub_matrix[j * N + column] = 0;
         }
     }
 
