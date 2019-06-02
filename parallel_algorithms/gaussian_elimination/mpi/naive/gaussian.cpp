@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]){
     // Declare a problem size
-    int N = 1024;
+    int N = 8;
 
     // Declate variables for timing
     double t_start;
@@ -41,8 +41,18 @@ int main(int argc, char *argv[]){
      */
     // Declare our problem matrices
     // This work is duplicated just for code simplicity
-    float *matrix = new float[N * N];
-    init_matrix(matrix, N);
+    float *matrix;
+    float *matrix_serial;
+
+    // Only rank 0 needs space for the total solution
+    if(rank == 0){
+        matrix = new float [N * N];
+        matrix_serial = new float [N * N];
+
+        // Initialize the matrix, and copy it for functional test
+        init_matrix(matrix, N);
+        memcpy(matrix_serial, matrix, N * N * sizeof(float));
+    }
     
     // Declare our sub-matrix for each process
     float *sub_matrix = new float[N * num_rows];
@@ -57,7 +67,7 @@ int main(int argc, char *argv[]){
      * later ranks for elimination
      */
     // Allocate space for a single row to be sent to this rank
-    float *row = new float[N * num_rows];
+    float *row = new float[N];
 
     // Get start time
     if(rank == 0){
@@ -135,14 +145,19 @@ int main(int argc, char *argv[]){
 
     MPI_Finalize();
 
-    // Print the output and the time
+    // Check the result, and print the time
     if(rank == 0){
-        //print_matrix(matrix, N);
+        ge_serial(matrix_serial, N);
+        print_matrix(matrix_serial, N);
+        print_matrix(matrix, N);
         cout << t_total << " Seconds" << endl;
     }
 
     // Free heap-allocated memory
-    delete[] matrix;
+    if(rank == 0){
+        delete[] matrix;
+        delete[] matrix_serial;
+    }
     delete[] sub_matrix;
     delete[] row;
 
