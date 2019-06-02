@@ -9,7 +9,7 @@
 
 int main(int argc, char *argv[]){
     // Declare a problem size
-    int N = 8;
+    int N = 1024;
 
     // Declate variables for timing
     double t_start;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]){
             // Eliminate for the other rows mapped to this rank
             for(int j = local_row + 1; j < num_rows; j++){
                 scale = sub_matrix[j * N + i];
-                
+
                 // Subtract to eliminate pivot from later rows
                 for(int k = i + 1; k < N; k++){
                     sub_matrix[j * N + k] -= scale * row[k];
@@ -123,15 +123,17 @@ int main(int argc, char *argv[]){
 
             // Eliminate for all the rows mapped to this rank
             for(int j = local_row; j < num_rows; j++){
-                //scale = sub_matrix[j * N + i];
-                // Subtract to eliminate pivot from later rows
-                //for(int k = i + 1; k < N; k++){
-                //    sub_matrix[j * N + k] -= scale * row[k];
-                //}
+                if((which_rank < rank) || (j > local_row)){
+                    scale = sub_matrix[j * N + i];
 
-                // Use assignment for the trivial elimination
-                if((which_rank < rank) || (j > local_row))
+                    //Subtract to eliminate pivot from later rows
+                    for(int k = i + 1; k < N; k++){
+                        sub_matrix[j * N + k] -= scale * row[k];
+                    }
+
+                    // Use assignment for the trivial elimination
                     sub_matrix[j * N + i] = 0;
+                }
             }
         }
     }
@@ -162,7 +164,7 @@ int main(int argc, char *argv[]){
 
     // Print the output and the time
     if(rank == 0){
-        print_matrix(matrix, N);
+        //print_matrix(matrix, N);
         cout << t_total << " Seconds" << endl;
     }
 
