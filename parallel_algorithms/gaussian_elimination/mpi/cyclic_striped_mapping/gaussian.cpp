@@ -97,6 +97,15 @@ int main(int argc, char *argv[]){
 
             // Use assignment for the trivial self-division
             sub_matrix[local_row * N + i] = 1;
+
+            // Copy the row into our send buffer
+            memcpy(row, &sub_matrix[local_row * N], N * sizeof(float));
+
+            // Broadcast this row to all the ranks
+            MPI_Bcast(row, N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
+        }else{
+            // Receive a row to use for elimination
+            MPI_Bcast(row, N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
         }
     }
 
