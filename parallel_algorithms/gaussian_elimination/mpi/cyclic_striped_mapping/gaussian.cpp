@@ -56,7 +56,7 @@ int main(int argc, char *argv[]){
     }else{
         // Scatter "num_rows" rows to "size" processes
         for(int i = 0; i < num_rows; i++){
-            MPI_Scatter(&matrix[i * N * num_rows], N, MPI_FLOAT,
+            MPI_Scatter(&matrix[i * N * size], N, MPI_FLOAT,
                 &sub_matrix[i * N], N, MPI_FLOAT, 0, MPI_COMM_WORLD);
         }
     }
