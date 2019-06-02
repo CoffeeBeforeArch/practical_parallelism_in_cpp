@@ -41,8 +41,12 @@ int main(int argc, char *argv[]){
      */
     // Declare our problem matrices
     // This work is duplicated just for code simplicity
-    float *matrix = new float[N * N];
+    float *matrix;
     if(rank == 0){
+        // Only rank 0 needs space for the total solution 
+        matrix = new float[N * N];
+
+        // Initialize the matrix
         init_matrix(matrix, N);
     }
 
@@ -169,7 +173,9 @@ int main(int argc, char *argv[]){
     }
 
     // Free heap-allocated memory
-    delete[] matrix;
+    if(rank == 0){
+        delete[] matrix;
+    }
     delete[] sub_matrix;
     delete[] row;
 
