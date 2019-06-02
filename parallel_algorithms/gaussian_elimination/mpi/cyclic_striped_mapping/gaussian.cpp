@@ -107,6 +107,13 @@ int main(int argc, char *argv[]){
 
             // Eliminate for the other rows mapped to this rank
             for(int j = local_row + 1; j < num_rows; j++){
+                scale = sub_matrix[j * N + i];
+                
+                // Subtract to eliminate pivot from later rows
+                for(int k = i + 1; k < N; k++){
+                    sub_matrix[j * N + k] -= scale * row[k];
+                }
+
                 // Use assignment for the trivial elimination
                 sub_matrix[j * N + i] = 0;
             }
@@ -114,7 +121,18 @@ int main(int argc, char *argv[]){
             // Receive a row to use for elimination
             MPI_Bcast(row, N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
 
-            // Eliminate for all the rows in this rank's sub-matrix
+            // Eliminate for all the rows mapped to this rank
+            for(int j = local_row; j < num_rows; j++){
+                //scale = sub_matrix[j * N + i];
+                // Subtract to eliminate pivot from later rows
+                //for(int k = i + 1; k < N; k++){
+                //    sub_matrix[j * N + k] -= scale * row[k];
+                //}
+
+                // Use assignment for the trivial elimination
+                if((which_rank < rank) || (j > local_row))
+                    sub_matrix[j * N + i] = 0;
+            }
         }
     }
 
