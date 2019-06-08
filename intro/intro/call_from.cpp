@@ -21,7 +21,7 @@ int main() {
 	// Print from main function
 	std::cout << "Launched from main" << std::endl;
 
-	// Wait for all threads to complete
+	// Wait for all threads to complete (in order)
 	for (int i = 0; i < 10; i++) {
 		t[i].join();
 	}
