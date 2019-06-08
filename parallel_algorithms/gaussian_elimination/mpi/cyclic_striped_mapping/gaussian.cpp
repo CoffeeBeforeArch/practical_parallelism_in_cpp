@@ -71,7 +71,7 @@ int main(int argc, char *argv[]){
      * later ranks for elimination
      */
     // Allocate space for a single row to be sent to this rank
-    float *row = new float[N * num_rows];
+    float *row = new float[N];
 
     // Get start time
     if(rank == 0){
