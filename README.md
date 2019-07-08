@@ -1,5 +1,5 @@
 # Practical Parallelism in C++
-This repository contains all code from the YouTube series "Practical Parallelism in C++" by CoffeeBeforeArch. The general flow this course was taken from the book C++ Concurrency in Action.
+This repository contains all code from the YouTube series "Practical Parallelism in C++" by CoffeeBeforeArch.
 
 ## Contact
 
