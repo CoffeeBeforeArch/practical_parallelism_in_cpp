@@ -2,62 +2,62 @@
 // with synchronized output
 // By: Nick from CoffeeBeforeArch
 
-#include <iostream>
-#include <stdio.h>
 #include <mpi.h>
+#include <stdio.h>
+#include <iostream>
 
 using namespace std;
 
-int main(int argc, char *argv[]){
-    // Unique rank is assigned to each process in a communicator
-    int rank;
+int main(int argc, char *argv[]) {
+  // Unique rank is assigned to each process in a communicator
+  int rank;
 
-    // Total number of ranks
-    int size;
+  // Total number of ranks
+  int size;
 
-    // The machine we are on
-    char name[80];
+  // The machine we are on
+  char name[80];
 
-    // Length of the machine name
-    int length;
+  // Length of the machine name
+  int length;
 
-    // Initializes the MPI execution environment
-    MPI_Init(&argc, &argv);
-    
-    // Get this process' rank (process within a communicator)
-    // MPI_COMM_WORLD is the default communicator
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  // Initializes the MPI execution environment
+  MPI_Init(&argc, &argv);
 
-    // Get the total number ranks in this communicator
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+  // Get this process' rank (process within a communicator)
+  // MPI_COMM_WORLD is the default communicator
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    // Gets the name of the processor
-    // Implementation specific (may be gethostname, uname, or sysinfo)
-    MPI_Get_processor_name(name, &length);
+  // Get the total number ranks in this communicator
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Pack these values together into a string
-    int buffer_len = 150;
-    char buffer[buffer_len];
-    sprintf(buffer, "Hello, MPI! Rank: %d Total: %d Machine: %s",
-            rank, size, name);
+  // Gets the name of the processor
+  // Implementation specific (may be gethostname, uname, or sysinfo)
+  MPI_Get_processor_name(name, &length);
 
-    // Synchronize so we can remove interleaved output
-    if(rank == 0){
-        // Always print from rank 0
-        cout << buffer << endl;
-        for(int i = 1; i < size; i++){
-            // Takes buffer, size, type, source, tag, communicator, and status
-            MPI_Recv(buffer, buffer_len, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG,
-                    MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  // Pack these values together into a string
+  int buffer_len = 150;
+  char buffer[buffer_len];
+  sprintf(buffer, "Hello, MPI! Rank: %d Total: %d Machine: %s", rank, size,
+          name);
 
-            // Print our received message
-            printf("%s\n", buffer);
-        }
-    }else{
-        // If not rank zero, send your message to be printed
-        MPI_Send(buffer, buffer_len, MPI_CHAR, 0, rank, MPI_COMM_WORLD);    
+  // Synchronize so we can remove interleaved output
+  if (rank == 0) {
+    // Always print from rank 0
+    cout << buffer << endl;
+    for (int i = 1; i < size; i++) {
+      // Takes buffer, size, type, source, tag, communicator, and status
+      MPI_Recv(buffer, buffer_len, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG,
+               MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+      // Print our received message
+      printf("%s\n", buffer);
     }
-    
-    // Terminate MPI execution environment
-    MPI_Finalize();
+  } else {
+    // If not rank zero, send your message to be printed
+    MPI_Send(buffer, buffer_len, MPI_CHAR, 0, rank, MPI_COMM_WORLD);
+  }
+
+  // Terminate MPI execution environment
+  MPI_Finalize();
 }
