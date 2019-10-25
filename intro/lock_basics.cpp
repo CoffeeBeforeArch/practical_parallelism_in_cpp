@@ -24,10 +24,8 @@ int main() {
     t[i] = std::thread(call_from, i);
   }
 
-  // Print from main function
-  mtx.lock();
-  std::cout << "Launched from main" << std::endl;
-  mtx.unlock();
+  // Print from main thread
+  call_from(10);
 
   // Wait for all threads to complete
   for (int i = 0; i < 10; i++) {
