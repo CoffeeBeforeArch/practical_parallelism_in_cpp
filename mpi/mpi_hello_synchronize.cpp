@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     cout << buffer << endl;
     for (int i = 1; i < size; i++) {
       // Takes buffer, size, type, source, tag, communicator, and status
-      MPI_Recv(buffer, buffer_len, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG,
+      MPI_Recv(buffer, buffer_len, MPI_CHAR, i, MPI_ANY_TAG,
                MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
       // Print our received message

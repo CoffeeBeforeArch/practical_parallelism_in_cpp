@@ -5,23 +5,28 @@
 #include <mutex>
 #include <thread>
 
+using std::mutex;
+using std::thread;
+using std::cout;
+using std::endl;
+
 // Mutex for critical section
-std::mutex mtx;
+mutex mtx;
 
 // Initial function for each thread
 void call_from(int tid) {
   mtx.lock();
-  std::cout << "Launched by thread " << tid << std::endl;
+  cout << "Launched by thread " << tid << endl;
   mtx.unlock();
 }
 
 int main() {
   // Create an array of 10 thread objects
-  std::thread t[10];
+  thread t[10];
 
   // Launch 10 threads with initial function "call_from(...)"
   for (int i = 0; i < 10; i++) {
-    t[i] = std::thread(call_from, i);
+    t[i] = thread(call_from, i);
   }
 
   // Print from main thread
