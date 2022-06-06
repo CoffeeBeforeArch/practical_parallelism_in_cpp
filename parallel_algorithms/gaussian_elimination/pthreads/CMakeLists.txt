@@ -1,0 +1,5 @@
+add_executable(pthreads_cyclic_striped_mapping_gaussian cyclic_striped_mapping/gaussian.cpp)
+target_link_libraries(pthreads_cyclic_striped_mapping_gaussian PRIVATE Threads::Threads)
+
+add_executable(pthreads_naive_gaussian naive/gaussian.cpp)
+target_link_libraries(pthreads_naive_gaussian PRIVATE Threads::Threads)

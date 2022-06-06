@@ -9,11 +9,41 @@ Suggestions for specific content can be sent to: CoffeeBeforeArch@gmail.com
 ## Environment 
 Operating System: Windows 10 & Ubuntu 18.04
 
-IDE: Visual Studio 2017
+IDE: Visual Studio 2017/VS Code/CLion
 
-Text Editor: VIM
+Build System: CMake
+
+Text Editor: VIM/VS Code
 
 Thread Interfaces: Windows API, Pthreads, C++11 Standard, MPI
+
+## How to Build using CMake
+### Default settings
+```bash
+# make a build directory
+mkdir build
+# move inside the directory
+cd build
+# generate configuration files
+cmake ..
+# build
+cmake --build .
+```
+### Build target - Debug
+```bash
+mkdir build-debug
+cd build-debug
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+cmake --build .
+```
+### Build target - Release
+```bash
+mkdir build-release
+cd build-release
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build .
+```
+
 
 ## Concepts covered in each video
 # C++ Threads
