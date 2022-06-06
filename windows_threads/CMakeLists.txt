@@ -1,0 +1,2 @@
+add_executable(windows_threads windows_threads/windows_threads.cpp)
+target_link_libraries(windows_threads PRIVATE Threads::Threads)

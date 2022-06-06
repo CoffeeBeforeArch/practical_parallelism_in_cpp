@@ -3,7 +3,7 @@
 // By: Nick from CoffeeBeforeArch
 
 #include <mpi.h>
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 
 using namespace std;
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
   MPI_Get_processor_name(name, &length);
 
   // Pack these values together into a string
-  int buffer_len = 150;
+  const int buffer_len = 150;
   char buffer[buffer_len];
   sprintf(buffer, "Hello, MPI! Rank: %d Total: %d Machine: %s", rank, size,
           name);

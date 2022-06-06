@@ -2,16 +2,16 @@
 // MPI and block mapping (assumes square matrix)
 // By: Nick from CoffeeBeforeArch
 
-#include <stdlib.h>
 #include <mpi.h>
 #include <cstring>
+#include <memory>
 #include "../../common/common.h"
 
 int main(int argc, char *argv[]){
     // Declare a problem size
-    int N = 1024;
+    const int N = 1024;
 
-    // Declate variables for timing
+    // Declare variables for timing
     double t_start;
     double t_end;
     double t_total;
@@ -31,8 +31,8 @@ int main(int argc, char *argv[]){
     // Get the total number ranks in this communicator
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Calulate the number of rows based on the number of ranks
-    int num_rows = N / size; 
+    // Calculate the number of rows based on the number of ranks
+    const int num_rows = N / size;
 
     /*
      * Distribute Work to Ranks:
@@ -41,21 +41,22 @@ int main(int argc, char *argv[]){
      */
     // Declare our problem matrices
     // This work is duplicated just for code simplicity
-    float *matrix;
+    std::unique_ptr<float[]> matrix;
 
     // Only rank 0 needs space for the total solution
     if(rank == 0){
-        matrix = new float [N * N];
+        matrix = std::make_unique<float[]>(N * N);
+//        matrix = new float [N * N];
 
         // Initialize the matrix
-        init_matrix(matrix, N);
+        init_matrix(matrix.get(), N);
     }
     
     // Declare our sub-matrix for each process
-    float *sub_matrix = new float[N * num_rows];
+    std::unique_ptr<float[]> sub_matrix = std::make_unique<float[]>(N * num_rows);
 
     // Send a sub-matrix to each process
-    MPI_Scatter(matrix, N * num_rows, MPI_FLOAT, sub_matrix,
+    MPI_Scatter(matrix.get(), N * num_rows, MPI_FLOAT, sub_matrix.get(),
             N * num_rows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     /*
@@ -64,24 +65,20 @@ int main(int argc, char *argv[]){
      * later ranks for elimination
      */
     // Allocate space for a single row to be sent to this rank
-    float *row = new float[N];
+    std::unique_ptr<float[]> row = std::make_unique<float[]>(N);
 
     // Get start time
     if(rank == 0){
         t_start = MPI_Wtime();
     }
 
-    // Variables for code clarity
-    int pivot;
-    int scale;
-    int column;
-    int start_row;
+    float scale;
 
     // Receivers go here
-    start_row = rank * num_rows;
+    const int start_row = rank * num_rows;
     for(int i = 0; i < start_row; i++){
-        // Wait for the preceeding ranks to forward us a row
-        MPI_Bcast(row, N, MPI_FLOAT, i / num_rows, MPI_COMM_WORLD);
+        // Wait for the preceding ranks to forward us a row
+        MPI_Bcast(row.get(), N, MPI_FLOAT, i / num_rows, MPI_COMM_WORLD);
 
         // Eliminate from this element from all rows mapped to this
         // rank
@@ -101,8 +98,8 @@ int main(int argc, char *argv[]){
     // Senders go here
     for(int i = 0; i < num_rows; i++){
         // Normalize this row to the pivot
-        column = rank * num_rows + i;
-        pivot = sub_matrix[i * N + column];
+        const int column = rank * num_rows + i;
+        const float pivot = sub_matrix[i * N + column];
 
         // Normalize every other element in this row to the pivot
         for(int j = column + 1; j < N; j++){
@@ -113,10 +110,10 @@ int main(int argc, char *argv[]){
         sub_matrix[i * N + column] = 1;
 
         // Fill row to be sent
-        memcpy(row, &sub_matrix[i * N], N * sizeof(float));
+        memcpy(row.get(), &sub_matrix[i * N], N * sizeof(float));
 
         // Broadcast the normalized row to everyone else;
-        MPI_Bcast(row, N, MPI_FLOAT, rank, MPI_COMM_WORLD);
+        MPI_Bcast(row.get(), N, MPI_FLOAT, rank, MPI_COMM_WORLD);
 
         // Update the rest of the rows for this rank
         for(int j = i + 1; j < num_rows; j++){
@@ -134,7 +131,7 @@ int main(int argc, char *argv[]){
 
     // Finished ranks must still wait with synchronous broadcast
     for(int i = rank * num_rows + 1; i < N; i++){
-        MPI_Bcast(row, N, MPI_FLOAT, i / num_rows, MPI_COMM_WORLD);
+        MPI_Bcast(row.get(), N, MPI_FLOAT, i / num_rows, MPI_COMM_WORLD);
     }
 
     // Barrier to track when calculations are done
@@ -150,7 +147,7 @@ int main(int argc, char *argv[]){
      * Collect all Sub-Matrices
      * All sub-matrices are gathered using the gather function
      */
-    MPI_Gather(sub_matrix, N * num_rows, MPI_FLOAT, matrix,
+    MPI_Gather(sub_matrix.get(), N * num_rows, MPI_FLOAT, matrix.get(),
             N * num_rows, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
 
@@ -161,13 +158,6 @@ int main(int argc, char *argv[]){
         //print_matrix(matrix, N);
         cout << t_total << " Seconds" << endl;
     }
-
-    // Free heap-allocated memory
-    if(rank == 0){
-        delete[] matrix;
-    }
-    delete[] sub_matrix;
-    delete[] row;
 
     return 0;
 }

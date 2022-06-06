@@ -1,0 +1,2 @@
+add_subdirectory(gaussian_elimination/mpi)
+add_subdirectory(gaussian_elimination/pthreads)

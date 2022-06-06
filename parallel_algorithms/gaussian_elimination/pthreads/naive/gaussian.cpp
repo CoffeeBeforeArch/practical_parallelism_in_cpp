@@ -2,30 +2,27 @@
 // Pthreads (assumes square matrix)
 // By: Nick from CoffeeBeforeArch
 
-#include <stdlib.h>
+#include <cstdlib>
+#include <memory>
 #include "utils.h"
 
 int main(){
     // Number of threads to launch
-    int num_threads = 8;
+    const int num_threads = 8;
 
     // Dimensions of square matrix
-    int N = 2048;
+    const int N = 2048;
 
     // Declare our problem matrices
-    float *matrix;
-    float *matrix_pthread;
+    std::unique_ptr<float[]> matrix = std::make_unique<float[]>(N * N);
+    std::unique_ptr<float[]> matrix_pthread = std::make_unique<float[]>(N * N);
 
     // Declare and initialize the size of the matrix
     size_t bytes = N * N * sizeof(float);
 
-    // Allocate space for our matrices
-    matrix = new float[N * N];
-    matrix_pthread = new float[N * N];
-
     // Initialize a matrix and copy it
-    init_matrix(matrix, N);
-    memcpy(matrix_pthread, matrix, bytes);
+    init_matrix(matrix.get(), N);
+    memcpy(matrix_pthread.get(), matrix.get(), bytes);
 
     // Launch the threads via a helper function
     // Prints out time in seconds
@@ -37,7 +34,7 @@ int main(){
 
     // Call the serial version for our reference solution
     start = high_resolution_clock::now();
-    ge_serial(matrix, N);
+    ge_serial(matrix.get(), N);
     end = high_resolution_clock::now();
     
     // Cast timers as double to print
@@ -47,11 +44,7 @@ int main(){
     cout << "Elapsed time serial = " << elapsed.count() << " seconds" <<  endl;
 
     // Verify the solution
-    verify_solution(matrix, matrix_pthread, N);
-    
-    // Free heap-allocated memory
-    delete[] matrix;
-    delete[] matrix_pthread;
+    verify_solution(matrix.get(), matrix_pthread.get(), N);
 
     return 0;
 }

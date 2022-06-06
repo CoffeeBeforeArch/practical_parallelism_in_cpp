@@ -2,16 +2,16 @@
 // MPI and cyclic striped mapping (assumes square matrix)
 // By: Nick from CoffeeBeforeArch
 
-#include <stdlib.h>
 #include <mpi.h>
 #include <cstring>
+#include <memory>
 #include "../../common/common.h"
 
 int main(int argc, char *argv[]){
     // Declare a problem size
-    int N = 1024;
+    const int N = 1024;
 
-    // Declate variables for timing
+    // Declare variables for timing
     double t_start;
     double t_end;
     double t_total;
@@ -31,8 +31,8 @@ int main(int argc, char *argv[]){
     // Get the total number ranks in this communicator
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     
-    // Calulate the number of rows based on the number of ranks
-    int num_rows = N / size; 
+    // Calculate the number of rows based on the number of ranks
+    const int num_rows = N / size;
 
     /*
      * Distribute Work to Ranks:
@@ -41,22 +41,22 @@ int main(int argc, char *argv[]){
      */
     // Declare our problem matrices
     // This work is duplicated just for code simplicity
-    float *matrix;
+    std::unique_ptr<float[]> matrix;
     if(rank == 0){
-        // Only rank 0 needs space for the total solution 
-        matrix = new float[N * N];
+        // Only rank 0 needs space for the total solution
+        matrix = std::make_unique<float[]>(N * N);
 
         // Initialize the matrix
-        init_matrix(matrix, N);
+        init_matrix(matrix.get(), N);
     }
 
     // Declare our sub-matrix for each process
-    float *sub_matrix = new float[N * num_rows];
+    std::unique_ptr<float[]> sub_matrix = std::make_unique<float[]>(N * num_rows);
 
     // Cyclic stripe the rows to all the ranks
     if(size == 1){
         // All rows to the single rank
-        memcpy(sub_matrix, matrix, N * N * sizeof(float));
+        memcpy(sub_matrix.get(), matrix.get(), N * N * sizeof(float));
     }else{
         // Scatter "num_rows" rows to "size" processes
         for(int i = 0; i < num_rows; i++){
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]){
      * later ranks for elimination
      */
     // Allocate space for a single row to be sent to this rank
-    float *row = new float[N];
+    std::unique_ptr<float[]> row = std::make_unique<float[]>(N);
 
     // Get start time
     if(rank == 0){
@@ -79,21 +79,18 @@ int main(int argc, char *argv[]){
     }
     
     // Local variables for code clarity
-    int local_row;
-    int which_rank;
-    int pivot;
-    int scale;
+    float scale;
 
     // Iterate over all rows
     for(int i = 0; i < N; i++){
         // Which row in the sub-matrix are we accessing?
-        local_row = i / size;
+        const int local_row = i / size;
         // Which rank does this row belong to?
-        which_rank = i % size;
+        const int which_rank = i % size;
         
         // Eliminate if the pivot belongs to this rank
         if(rank == which_rank){
-            pivot = sub_matrix[local_row * N + i];
+            const float pivot = sub_matrix[local_row * N + i];
             
             // Divide the rest of the row by the pivot
             for(int j = i + 1; j < N; j++){
@@ -104,10 +101,10 @@ int main(int argc, char *argv[]){
             sub_matrix[local_row * N + i] = 1;
 
             // Copy the row into our send buffer
-            memcpy(row, &sub_matrix[local_row * N], N * sizeof(float));
+            memcpy(row.get(), &sub_matrix[local_row * N], N * sizeof(float));
 
             // Broadcast this row to all the ranks
-            MPI_Bcast(row, N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
+            MPI_Bcast(row.get(), N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
 
             // Eliminate for the other rows mapped to this rank
             for(int j = local_row + 1; j < num_rows; j++){
@@ -123,7 +120,7 @@ int main(int argc, char *argv[]){
             }
         }else{
             // Receive a row to use for elimination
-            MPI_Bcast(row, N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
+            MPI_Bcast(row.get(), N, MPI_FLOAT, which_rank, MPI_COMM_WORLD);
 
             // Eliminate for all the rows mapped to this rank
             for(int j = local_row; j < num_rows; j++){
@@ -156,7 +153,7 @@ int main(int argc, char *argv[]){
      * All sub-matrices are gathered using the gather function
      */
     if(size == 1){
-        memcpy(matrix, sub_matrix, N * N * sizeof(float));
+        memcpy(matrix.get(), sub_matrix.get(), N * N * sizeof(float));
     }else{
         // Gather "size" rows at a time
         for(int i = 0; i < num_rows; i++){
@@ -171,13 +168,6 @@ int main(int argc, char *argv[]){
         //print_matrix(matrix, N);
         cout << t_total << " Seconds" << endl;
     }
-
-    // Free heap-allocated memory
-    if(rank == 0){
-        delete[] matrix;
-    }
-    delete[] sub_matrix;
-    delete[] row;
 
     return 0;
 }

@@ -1,0 +1,2 @@
+add_executable(posix_threads posix_threads.cpp)
+target_link_libraries(posix_threads PRIVATE Threads::Threads)

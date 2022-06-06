@@ -13,7 +13,7 @@ struct Package {
   int number;
 };
 
-void display_message(HANDLE hScreen, int tid, int number, const char *message) {
+void display_message(const HANDLE hScreen, const int tid, const int number, const char *message) {
   // A character array
   TCHAR message_buffer[BUF_SIZE];
   size_t cchStringSize;
@@ -38,9 +38,9 @@ void display_message(HANDLE hScreen, int tid, int number, const char *message) {
 // WINAPI is a macro that specifies the use of the Windows calling
 // convention
 // LPVOID is just a void pointer
-DWORD WINAPI boring_thread_function(LPVOID lpParam) {
+DWORD WINAPI boring_thread_function(const LPVOID lpParam) {
   // Cast our void pointer to our defined struct
-  Package local_package = *(Package *)lpParam;
+  const Package &local_package = *(Package *)lpParam;
 
   // Get Handle to the screen
   HANDLE hStdout = NULL;
@@ -56,7 +56,7 @@ DWORD WINAPI boring_thread_function(LPVOID lpParam) {
 
 int main() {
   // Create an array of handles
-  HANDLE array_of_handles[NUM_THREADS] = {0};
+  HANDLE array_of_handles[NUM_THREADS]{};
   // Create an array of structs as arguments
   Package packages[NUM_THREADS];
 
@@ -82,8 +82,8 @@ int main() {
   WaitForMultipleObjects(NUM_THREADS, array_of_handles, true, INFINITE);
 
   // Clean up by closing open object handles
-  for (int i = 0; i < NUM_THREADS; i++) {
-    CloseHandle(array_of_handles[i]);
+  for (auto & array_of_handle : array_of_handles) {
+    CloseHandle(array_of_handle);
   }
 
   return 0;

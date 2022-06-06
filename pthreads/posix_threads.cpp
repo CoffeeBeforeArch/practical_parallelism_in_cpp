@@ -3,10 +3,11 @@
 
 #include <pthread.h>
 #include <iostream>
+#include <array>
 
 using namespace std;
 
-#define NUM_THREADS 10
+constexpr int NUM_THREADS {10};
 
 // Global pthread implementation of mutex lock
 pthread_mutex_t mtx;
@@ -19,19 +20,20 @@ struct Args {
 
 // pthread functions must have return type void*, with a void* arg
 void *boring_thread_function(void *args) {
-  Args *local_args = (Args *)args;
+  const Args *const local_args = (Args *)args;
   // Get the lock before entering the critical section
   pthread_mutex_lock(&mtx);
   cout << "Printing from thread " << local_args->tid << endl;
   cout << "Value of data is " << local_args->data << endl;
   // Release the lock to someone else
   pthread_mutex_unlock(&mtx);
+  return nullptr;
 }
 
 int main() {
   // Create an array of 10 threads
-  pthread_t threads[NUM_THREADS];
-  Args per_thread_args[NUM_THREADS];
+  std::array<pthread_t, NUM_THREADS> threads{};
+  std::array<Args, NUM_THREADS> per_thread_args{};
 
   // Create 10 threads
   for (int i = 0; i < NUM_THREADS; i++) {
@@ -45,15 +47,15 @@ int main() {
             3.) Entry routine
             4.) Arguments
     */
-    pthread_create(&threads[i], NULL, boring_thread_function,
+    pthread_create(&threads[i], nullptr, boring_thread_function,
                    (void *)&per_thread_args[i]);
   }
 
   // Return code for the thread
   void *ret;
   // Wait for all threads to finish before exiting the program
-  for (int i = 0; i < NUM_THREADS; i++) {
-    pthread_join(threads[i], &ret);
+  for (auto& thread : threads) {
+    pthread_join(thread, &ret);
   }
 
   return 0;

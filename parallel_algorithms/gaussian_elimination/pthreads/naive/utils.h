@@ -4,6 +4,7 @@
 
 #include <pthread.h>
 #include <chrono>
+#include <memory>
 #include "../../common/common.h"
 
 using namespace std::chrono;
@@ -28,9 +29,9 @@ struct Args {
     high_resolution_clock::time_point *end;
 };
 
-void perf_cycle(int num_threads, int *counter, pthread_mutex_t *mtx,
-        pthread_cond_t *cond,
-        high_resolution_clock::time_point *time){
+void perf_cycle(const int num_threads, int *const counter, pthread_mutex_t *const mtx,
+        pthread_cond_t *const cond,
+        high_resolution_clock::time_point *const time){
     // Get the lock
     pthread_mutex_lock(mtx);
 
@@ -60,17 +61,17 @@ void perf_cycle(int num_threads, int *counter, pthread_mutex_t *mtx,
 // Takes a pointer to a struct of args as an argument
 void *ge_parallel(void *args){
     // Cast void pointer to struct pointer
-    Args *local_args = (Args*)args;
+    const Args *const local_args = (Args*)args;
 
     // Unpack the arguments
-    int start_row = local_args->start_row;
-    int end_row = local_args->end_row;
+    const int start_row = local_args->start_row;
+    const int end_row = local_args->end_row;
     float *matrix = local_args->matrix;
-    int N = local_args->N;
-    pthread_barrier_t *barrier = local_args->barrier;
+    const int N = local_args->N;
+    pthread_barrier_t *const barrier = local_args->barrier;
 
-    int num_threads = local_args->num_threads;
-    int *counter = local_args->counter;
+    const int num_threads = local_args->num_threads;
+    int *const counter = local_args->counter;
     pthread_mutex_t *mtx = local_args->mtx;
     pthread_cond_t *cond = local_args->cond;
     high_resolution_clock::time_point *start = local_args->start;
@@ -124,18 +125,18 @@ void *ge_parallel(void *args){
     // Stop monitoring when last thread exits
     perf_cycle(num_threads, counter, mtx, cond, end);
 
-    return 0;
+    return nullptr;
 }
 
 // Helper function create thread 
-void launch_threads(int num_threads, float* matrix, int N){
+void launch_threads(const int num_threads, std::unique_ptr<float[]>& matrix, const int N){
 
     // Create array of thread objects we will launch
     pthread_t threads[num_threads];
 
     // Create a barrier and initialize it
     pthread_barrier_t barrier;
-    pthread_barrier_init(&barrier, NULL, num_threads);
+    pthread_barrier_init(&barrier, nullptr, num_threads);
 
     // Create an array of structs to pass to the threads
     Args thread_args[num_threads];
@@ -152,7 +153,7 @@ void launch_threads(int num_threads, float* matrix, int N){
         // Pack struct with its arguments
         thread_args[i].start_row = i * (N / num_threads);
         thread_args[i].end_row = i * (N / num_threads) + (N / num_threads);
-        thread_args[i].matrix = matrix;
+        thread_args[i].matrix = matrix.get();
         thread_args[i].N = N;
         thread_args[i].barrier = &barrier;
 
@@ -164,11 +165,11 @@ void launch_threads(int num_threads, float* matrix, int N){
         thread_args[i].end = &end;
 
         // Launch the thread
-        pthread_create(&threads[i], NULL, ge_parallel, (void*)&thread_args[i]);
+        pthread_create(&threads[i], nullptr, ge_parallel, (void*)&thread_args[i]);
     }
 
     for(int i = 0; i < num_threads; i++){
-        pthread_join(threads[i], NULL);
+        pthread_join(threads[i], nullptr);
     }
 
     // Cast timers as double to print
